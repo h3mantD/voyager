@@ -73,7 +73,7 @@ Then load `.output/chrome-mv3` as an unpacked extension in `chrome://extensions`
 
 ### Option 3: Chrome Web Store
 
-Coming soon.
+Not available yet. Use Option 1 or 2 for now.
 
 ## Usage
 
