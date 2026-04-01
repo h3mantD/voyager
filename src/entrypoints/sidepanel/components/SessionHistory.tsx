@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Session, CapturedEvent, Report } from "../../../lib/types";
+import { getAIConfig } from "../../../lib/ai/config";
 
 interface SessionDetail {
   session: Session;
@@ -16,9 +17,12 @@ export function SessionHistory({ onBack, onLoadSession }: Props) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [selectedDetail, setSelectedDetail] = useState<SessionDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasAI, setHasAI] = useState(false);
+  const [enhancing, setEnhancing] = useState(false);
 
   useEffect(() => {
     loadSessions();
+    getAIConfig().then((config) => setHasAI(!!config));
   }, []);
 
   async function loadSessions() {
@@ -72,6 +76,24 @@ export function SessionHistory({ onBack, onLoadSession }: Props) {
       // Rollback on error
       setSessions(previousSessions);
     }
+  }
+
+  async function handleEnhanceWithAI(sessionId: string) {
+    setEnhancing(true);
+    try {
+      const response = await chrome.runtime.sendMessage({
+        type: "GENERATE_REPORT",
+        payload: { sessionId, mode: "ai-enhanced" },
+      });
+      if (response?.success && response.report) {
+        setSelectedDetail((prev) =>
+          prev ? { ...prev, report: response.report } : prev,
+        );
+      }
+    } catch {
+      // AI enhancement failed — detail view still shows existing report
+    }
+    setEnhancing(false);
   }
 
   const handleRestore = useCallback(
@@ -209,6 +231,34 @@ export function SessionHistory({ onBack, onLoadSession }: Props) {
                 Download .md
               </button>
             </div>
+            {/* Enhance with AI */}
+            {hasAI && report.mode === "deterministic" && !enhancing && (
+              <div>
+                <button
+                  onClick={() => handleEnhanceWithAI(session.id)}
+                  className="w-full py-1.5 px-3 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white text-xs font-medium rounded-lg transition-colors"
+                >
+                  Enhance with AI
+                  <span className="ml-1.5 text-[10px] bg-white/20 px-1 py-0.5 rounded-full">
+                    Experimental
+                  </span>
+                </button>
+                <p className="text-[10px] text-slate-400 text-center mt-1">
+                  Results may vary — review before sharing
+                </p>
+              </div>
+            )}
+            {enhancing && (
+              <div className="flex items-center justify-center gap-2 py-2">
+                <div className="w-3 h-3 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                <span className="text-xs text-slate-500">Enhancing with AI...</span>
+              </div>
+            )}
+            {report.mode === "ai-enhanced" && (
+              <span className="inline-block text-xs px-1.5 py-0.5 bg-purple-50 text-purple-600 rounded">
+                AI Enhanced
+              </span>
+            )}
             <details>
               <summary className="cursor-pointer text-xs text-slate-500 hover:text-slate-700">
                 Preview

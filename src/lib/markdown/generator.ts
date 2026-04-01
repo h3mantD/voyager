@@ -726,9 +726,45 @@ async function generateAIEnhancedReport(
   screenshots: Screenshot[],
   screenStates: ScreenState[],
 ): Promise<string> {
-  // For now, fall back to deterministic. AI integration in Phase 3.
-  return (
-    generateDeterministicReport(session, events, notes, screenshots, screenStates) +
-    "\n\n> *AI enhancement coming soon. This report was generated deterministically.*\n"
+  const deterministicReport = generateDeterministicReport(
+    session,
+    events,
+    notes,
+    screenshots,
+    screenStates,
   );
+
+  // Try AI enhancement — fall back to deterministic if no config or on error
+  try {
+    const { getAIConfig } = await import("../ai/config");
+    const config = await getAIConfig();
+    if (!config) {
+      return deterministicReport +
+        "\n\n> *No AI provider configured. Go to Settings to add one.*\n";
+    }
+
+    const { callAI } = await import("../ai/client");
+    const { buildReportPolishPrompt, stitchAIIntoReport } = await import(
+      "../ai/prompts/report-polish"
+    );
+
+    const messages = buildReportPolishPrompt(deterministicReport);
+    const response = await callAI(config, messages);
+
+    if (!response.content) {
+      return deterministicReport +
+        "\n\n> *AI returned empty response. Falling back to deterministic report.*\n";
+    }
+
+    // Stitch AI analysis into the full deterministic report
+    // (keeps Visual Design System, Event Summary, Screenshots intact)
+    const enhanced = stitchAIIntoReport(deterministicReport, response.content);
+
+    // Update frontmatter mode
+    return enhanced.replace("mode: deterministic", "mode: ai-enhanced");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return deterministicReport +
+      `\n\n> *AI enhancement failed: ${message}. Showing deterministic report.*\n`;
+  }
 }

@@ -4,10 +4,11 @@ import { NoteInput } from "./components/NoteInput";
 import { EventTimeline } from "./components/EventTimeline";
 import { ReportPreview } from "./components/ReportPreview";
 import { SessionHistory } from "./components/SessionHistory";
+import { SettingsPanel } from "./components/SettingsPanel";
 import { useSession } from "./hooks/useSession";
 import type { CapturedEvent, Report } from "../../lib/types";
 
-type View = "recorder" | "history";
+type View = "recorder" | "history" | "settings";
 
 export default function App() {
   const [view, setView] = useState<View>("recorder");
@@ -44,13 +45,39 @@ export default function App() {
             <span className="text-white text-xs font-bold">V</span>
           </div>
           <h1 className="font-semibold text-slate-800">Voyager</h1>
-          <span className="text-xs text-slate-400 ml-auto">v0.1.0</span>
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              onClick={() => setView(view === "settings" ? "recorder" : "settings")}
+              className={`p-1.5 rounded-md transition-colors ${
+                view === "settings"
+                  ? "bg-indigo-50 text-indigo-600"
+                  : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+              }`}
+              title="Settings"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M6.5 1.5h3l.5 2 1.5.7 1.8-1 2.1 2.1-1 1.8.7 1.5 2 .5v3l-2 .5-0.7 1.5 1 1.8-2.1 2.1-1.8-1-1.5.7-.5 2h-3l-.5-2-1.5-.7-1.8 1-2.1-2.1 1-1.8-.7-1.5-2-.5v-3l2-.5.7-1.5-1-1.8 2.1-2.1 1.8 1 1.5-.7z" />
+                <circle cx="8" cy="8" r="2.5" />
+              </svg>
+            </button>
+          </div>
         </div>
       </header>
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {view === "history" ? (
+        {view === "settings" ? (
+          <SettingsPanel onBack={() => setView("recorder")} />
+        ) : view === "history" ? (
           <SessionHistory
             onBack={() => setView("recorder")}
             onLoadSession={handleLoadSession}
