@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build output
+.output/
+dist/
+
+# WXT generated
+.wxt/
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# PRD (private)
+PRD.md
